@@ -15,5 +15,5 @@ https://habrahabr.ru/post/337036/
 11) Поверхностное объяснение некоторых структур и алгоритмов:  https://github.com/trekhleb/javascript-algorithms
 12) Диафильм про алгоритмы для школьников (если это ваш уровень) http://diafilmy.su/455-algoritmy-i-elementy.html
 13) Почему алгоритмы важны, но не обязательны для кодера: http://shape-of-code.coding-guidelines.com/2020/07/05/algorithms-are-now-commodities/
-# График зависимости времени от длины входа
+# График зависимости времени от длины входа (Возведение в степень)
 ![plot](../src/figure.png)
