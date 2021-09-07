@@ -1,6 +1,6 @@
 import unittest
-import simple
-import exponentiation as expon
+from hw1 import simple
+from hw1 import exponentiation as expon
 import time
 
 NUMBER = 1267650600228229401496703205376
