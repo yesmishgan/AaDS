@@ -1,6 +1,7 @@
 import unittest
 from hw1 import simple
 from hw1 import exponentiation as expon
+from hw1 import fib
 import time
 
 NUMBER = 1267650600228229401496703205376
