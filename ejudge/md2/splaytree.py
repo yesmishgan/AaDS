@@ -2,7 +2,6 @@ from collections import deque
 import os
 import re
 import sys
-from typing import Set
 
 class Node:
     def __init__(self, key, data):
@@ -71,20 +70,15 @@ class SplayTree:
                     self.__rotate_left(node.P)
                     self.__rotate_right(node.P)
 
-    def print_nulls(self, temp):
-        temp_str = '_ ' * (2 ** temp)
-
-        return temp_str
-
-    def print(self):
+    def print(self, out=sys.stdout):
         if (self.root == None):
-            print('_')
+            out.write('_\n')
             return
 
         q = deque() #Вершины
         pos = deque() #Позиции, где есть узел, на уровне
 
-        print(f'[{self.root.key} {self.root.data}]')
+        out.write(f'[{self.root.key} {self.root.data}]\n')
 
         if self.root.left != None:
             q.append(self.root.left)
@@ -99,33 +93,37 @@ class SplayTree:
         if nums_of_nodes == 0:
             return
         curr = pos.popleft()
-
+        
         for level in range(1, height):
+            curr_pos = 0
             width_level = 2 ** level
-            for position in range(width_level):
-                if curr == position and nums_of_nodes > 0:
+            while nums_of_nodes != 0:
+                if curr_pos == curr:
                     nums_of_nodes -= 1
                     node = q.popleft()
                     if curr != width_level - 1:
-                        sys.stdout.write(f'[{node.key} {node.data} {node.P.key}] ')
+                        out.write(f'[{node.key} {node.data} {node.P.key}] ')
                     else:
-                        sys.stdout.write(f'[{node.key} {node.data} {node.P.key}]')
+                        out.write(f'[{node.key} {node.data} {node.P.key}]')
                     if node.left != None:
                         q.append(node.left)
                         pos.append(2 * (curr + 1) - 2)
                     if node.right != None:
                         q.append(node.right)
                         pos.append(2 * (curr + 1) - 1)
-
+                    curr_pos = curr + 1
                     if len(pos) != 0:
                         curr = pos.popleft()
-                else:
-                    sys.stdout.write('_')
-                    if position != width_level - 1:
-                        sys.stdout.write(' ')
-            sys.stdout.write('\n')
-            nums_of_nodes = len(pos) + 1   
- 
+                elif curr - curr_pos != 0:
+                    out.write('_ ' * (curr - curr_pos))
+                    curr_pos = curr
+                if nums_of_nodes == 0:
+                    out.write('_ ' * (width_level - curr_pos - 1))
+                    if curr_pos != width_level:
+                        out.write('_')
+            nums_of_nodes = len(pos) + 1
+            out.write('\n')
+
             
 
     
@@ -155,9 +153,8 @@ class SplayTree:
     def add(self, K, V):
         temp = self.__find(K)
         if temp != None and temp.key == K:
-            print('error')
             self.splay(temp)
-            return
+            return False
         new_elem = Node(K, V)
         prev = None
         curr = self.root
@@ -177,46 +174,43 @@ class SplayTree:
             prev.left = new_elem
 
         self.splay(new_elem)
+        return True
 
 
     def set(self, K, V):
         temp = self.__find(K)
         if temp == None:
-            #self.splay(temp)
-            print('error')
-            return
+            return False
         
         if temp.key != K:
             self.splay(temp)
-            print('error')
-            return
+            return False
         temp.data = V
         self.splay(temp)
+        return True
 
     def delete(self, K):
         temp = self.__find(K)
     
         if temp == None:
-            print("error")
-            return
+            return False
         
         self.splay(temp)
 
         if temp.key != K:
-            print("error")
-            return
+            return False
         
         if temp.left == None:
             self.root = temp.right
             if self.root == None:
-                return
+                return True
             temp.right.P = None
-            return
+            return True
         
         if temp.right == None:
             self.root = temp.left
             temp.left.P = None
-            return
+            return True
 
         temp.left.P = None
         tmp = temp.left
@@ -228,50 +222,45 @@ class SplayTree:
             tmp.right = temp.right
             temp.right.P = tmp
         self.root = tmp
+        return True
         
     def search(self, K):
         if not self.root:
-
-            print(0)
-            return
+            return None
         prev = None
         tmp = self.root
         while tmp != None:
             prev = tmp
             if K == tmp.key:
                 self.splay(tmp)
-
-                print('1 ' + tmp.data)
-                return
+                return tmp
             elif K < tmp.key:
                 tmp = tmp.left
             else:
                 tmp = tmp.right
         self.splay(prev)
-        print(0)
+        return None
 
 
     def min(self):
         if not self.root:
-            print("error")
-            return
+            return None
         
         tmp = self.root
         while tmp.left != None:
             tmp = tmp.left
         self.splay(tmp)
-        print(f'{tmp.key} ' + tmp.data)
+        return tmp
 
     def max(self):
         if not self.root:
-            print("error")
-            return
+            return None
         
         tmp = self.root
         while tmp.right != None:
             tmp = tmp.right
         self.splay(tmp)
-        print(f'{tmp.key} ' + tmp.data)
+        return tmp
 
 
 if __name__=='__main__':
@@ -285,22 +274,40 @@ if __name__=='__main__':
         
         command = line.split()
         if re.match(r'^add -?\d+ \S+$', line):
-            tree.add(int(command[1]), command[2])
+            result = tree.add(int(command[1]), command[2])
+            if not result:
+                print("error")
 
         elif re.match(r'^set -?\d+ \S+$', line):
-            tree.set(int(command[1]), command[2])
+            result = tree.set(int(command[1]), command[2])
+            if not result:
+                print("error")
 
         elif re.match(r'^delete -?\d+$', line):
-            tree.delete(int(command[1]))
+            result = tree.delete(int(command[1]))
+            if not result:
+                print("error")
 
         elif re.match(r'^search -?\d+$', line):
-            tree.search(int(command[1]))
+            result = tree.search(int(command[1]))
+            if result != None:
+                print('1 ' + result.data)
+            else:
+                print(0)
 
         elif re.match(r'^min$', line):
-            tree.min()
+            result = tree.min()
+            if result != None:
+                print(f'{result.key} ' + result.data)
+            else:
+                print('error')
             
         elif re.match(r'^max$', line):
-            tree.max()
+            result = tree.max()
+            if result != None:
+                print(f'{result.key} ' + result.data)
+            else:
+                print('error')
     
         elif re.match(r'^print$', line):
             tree.print()
