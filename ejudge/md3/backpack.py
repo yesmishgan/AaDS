@@ -12,7 +12,8 @@ class Backpack(object):
     def add_subject(self, data):
         self.__subjects.append(data)
     def add_backpack_size(self, data):
-        self.__backpack_size = data	
+        self.__backpack_size = data
+        
     def gen_matrix(self):
         self.__subjects.pop(0)
         self.__A = [[0 for i in range(self.__backpack_size + 1)] for j in range(len(self.__subjects) + 1)]
