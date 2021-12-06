@@ -55,7 +55,7 @@ class BloomFilter:
 
     def print(self, out = sys.stdout) -> None:
         for i in range(0, self.__m):
-            if self.__arr.get_value(i) > 0:
+            if self.__arr.get_value(i):
                 out.write('1')
             else:
                 out.write('0')
@@ -72,12 +72,23 @@ if __name__ == '__main__':
 
     bloom = None
     flag = False
-
+    
     for line in sys.stdin:
         if re.match(r'^\s+$', line):
             continue
 
-        if re.match(re.compile(r'(^set \d+ (1|0|(0\.\d+))$)'), line) and not flag:
+        if re.match(re.compile(r'(^add \d+$)'), line) and flag:
+            bloom.add(int(line.split()[1]))
+
+        elif re.match(re.compile(r'(^search \d+$)'), line) and flag:
+            if bloom.search(int(line.split()[1])):
+                print(1)
+            else:
+                print(0)
+        elif re.match(re.compile(r'(^print$)'), line) and flag:
+            bloom.print()
+
+        elif re.match(re.compile(r'(^set \d+ (1|0|(0\.\d+))$)'), line) and not flag:
             
             temp = line.split()
             first = int(temp[1])
@@ -88,16 +99,6 @@ if __name__ == '__main__':
                 print(f'{bloom.get_m()} {bloom.get_k()}')
             else:
                 print('error')
-                
-        elif re.match(re.compile(r'(^add \d+$)'), line) and flag:
-            bloom.add(int(line.split()[1]))
 
-        elif re.match(re.compile(r'(^search \d+$)'), line) and flag:
-            if bloom.search(int(line.split()[1])):
-                print(1)
-            else:
-                print(0)
-        elif re.match(re.compile(r'(^print$)'), line) and flag:
-            bloom.print()
         else:
             print('error')
