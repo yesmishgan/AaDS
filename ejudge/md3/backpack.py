@@ -1,96 +1,101 @@
-import re 
+import re
 import sys
+from math import gcd
 
-class Backpack(object):
-    __A = []
-    __backpack_size = 0
-    __subjects = []
-    __ans = []
-    __res_cash = 0
-    __res_sum = 0
-    __res_gcd = 0
-    def add_subject(self, data):
-        self.__subjects.append(data)
-    def add_backpack_size(self, data):
-        self.__backpack_size = data
-        
-    def gen_matrix(self):
-        self.__subjects.pop(0)
-        self.__A = [[0 for i in range(self.__backpack_size + 1)] for j in range(len(self.__subjects) + 1)]
-        for i in range(1, len(self.__subjects) + 1):
-            for j in range(1, self.__backpack_size + 1):
-                if (int(self.__subjects[i - 1][0]) > j):
-                    self.__A[i][j] = self.__A[i - 1][j]
-                else:
-                    self.__A[i][j] = max(self.__A[i - 1][j], self.__A[i - 1][j - int(self.__subjects[i - 1][0])] + int(self.__subjects[i - 1][1]))	
-        
-        self.__res_cash = int(self.__A[len(self.__subjects)][self.__backpack_size])
-        		
-        self.findAns(len(self.__subjects),self.__backpack_size)						
-    def findAns(self,k,s):
-        if (self.__A[k][s] == 0):
+
+class Backpack:
+    def __init__(self) -> None:
+        self.__capacity = 0
+        self.__factor = 0
+        self.__weight = 0
+        self.__cost = 0
+        self.__collection = []
+
+    # Internal method to optimize table generation
+    def __gcd_weights(self, weight) -> None:
+        temp = weight + [self.__capacity]
+        self.__factor = max(temp)
+        for i in range(0, len(temp) - 1):
+            if self.__factor > gcd(temp[i], temp[i + 1]):
+                self.__factor = gcd(temp[i], temp[i + 1])
+
+        for i in range(len(weight)):
+            weight[i] //= self.__factor
+
+    # Internal methods to realize algorithm
+    def __find_items(self, table, weight, weight_size, capacity) -> None:
+        if table[weight_size][capacity] == 0:
             return
-        if (self.__A[k-1][s] == self.__A[k][s]):
-            self.findAns(k-1,s)
+
+        if table[weight_size - 1][capacity] == table[weight_size][capacity]:
+            self.__find_items(table, weight, weight_size - 1, capacity)
         else:
-            self.findAns(k-1,s - int(self.__subjects[k-1][0]))
-            self.__ans.append(k)
-    
-    def calc_massa(self):
-        for i in range(0,len(self.__subjects)):
-            for j in self.__ans:
-                if (i == j-1):
-                    self.__res_sum = int(self.__subjects[i][0]) + self.__res_sum
+            self.__find_items(table, weight, weight_size - 1, capacity - weight[weight_size - 1])
+            self.__weight += weight[weight_size - 1] * self.__factor
+            
+            self.__collection.append(weight_size)
 
-    def printAns(self):
-        for i in self.__ans:
-            print(i)
-    
-    def print_res(self):
-        print(str(self.__res_sum*self.__res_gcd) + " " + str(self.__res_cash))
-    
-    def gcd(self,a,b):
-        if a == 0 or b == 0: 
-            return max(a, b)
+    def __gen_table(self, weight, costs) -> None:
+        rows = len(weight)
+        columns = self.__capacity // self.__factor
+        table = [[0 for _ in range(columns + 1)] for _ in range(rows + 1)]
+
+        for i in range(1, rows + 1):
+            for j in range(0, columns + 1):
+                if weight[i - 1] <= j:
+                    table[i][j] = max(table[i - 1][j], costs[i - 1] + table[i - 1][j - weight[i - 1]])
+                else:
+                    table[i][j] = table[i - 1][j]
+
+        self.__cost = table[rows][columns]
+        self.__find_items(table, weight, rows, columns)
+
+    # External methods
+    def set_capacity(self, capacity) -> bool:
+        if capacity >= 0:
+            self.__capacity = capacity
+            return True
+        return False
+
+    def calculation(self, weight, costs) -> None:
+        self.__gcd_weights(weight)
+        self.__gen_table(weight, costs)
+
+    def get_collection(self) -> list:
+        return self.__collection
+
+    def get_cost(self) -> int:
+        return self.__cost
+
+    def get_weight(self) -> int:
+        return self.__weight
+
+
+if __name__ == '__main__':
+    bag = Backpack()
+    weights = []
+    costs = []
+    flag = False
+
+    for line in sys.stdin:
+        if line == '\n':
+            continue
+
+        if re.match(re.compile(r'(^\d+ \d+$)'), line) and flag:
+            temp = line.split()
+            weights.append(int(temp[0]))
+            costs.append(int(temp[1]))
+
+        elif re.match(re.compile(r'(^\d+$)'), line) and not flag:
+            bag.set_capacity(int(line))
+            flag = True
         else:
-            if a > b:
-                return self.gcd(a - b, b)
-            else:
-                return self.gcd(a, b - a)
-	
-    def all_gcd(self):
-	    self.__res_gcd = int(max(self.__subjects)[0])
-	    for i in range(1,len(self.__subjects)-1):
-		    if (self.__res_gcd > self.gcd(int(self.__subjects[i][0]),int(self.__subjects[i+1][0]))):
-			    self.__res_gcd = self.gcd(int(self.__subjects[i][0]),int(self.__subjects[i+1][0]))
-
-    def correct_subjects(self):
-        self.__backpack_size = int(self.__backpack_size/self.__res_gcd)
-        for i in range(1,len(self.__subjects)):
-            self.__subjects[i][0] = int(int(self.__subjects[i][0])/self.__res_gcd)	
-        			
-		
-
-
+                print('error')
     
+    # Launch computation
+    bag.calculation(weights, costs)
 
-
-
-flag = False
-
-digit = Backpack()
-
-for line in sys.stdin:
-	parser = re.findall(r'\d+', line)
-	if (len(parser)!=0):
-	    if (flag == False):
-		    digit.add_backpack_size(int(parser[0]))
-		    flag = True
-	    if (flag == True):
-		    digit.add_subject(parser)
-digit.all_gcd()
-digit.correct_subjects()
-digit.gen_matrix()
-digit.calc_massa()
-digit.print_res()
-digit.printAns()
+    # Print results
+    print(f'{bag.get_weight()} {bag.get_cost()}')
+    for item in bag.get_collection():
+        print(item)
